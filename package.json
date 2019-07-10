@@ -6,11 +6,14 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Chris Basham <csbasham@iu.edu>",
-  "license": "ISC",
+  "author": "Chris Basham <chris@bash.am>",
+  "license": "MIT",
   "dependencies": {
+    "cuid": "2.1.6",
     "kappa-core": "4.0.0",
     "kappa-view": "3.0.0",
-    "memdb": "1.3.1"
+    "kappa-view-list": "1.1.2",
+    "memdb": "1.3.1",
+    "random-access-memory": "3.1.1"
   }
 }
