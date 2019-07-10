@@ -2,12 +2,14 @@ const cuid = require('cuid')
 const kappa = require('kappa-core')
 const view = require('kappa-view')
 const list = require('kappa-view-list')
-var ram = require('random-access-memory')
-const memdb = require('memdb')
+const ram = require('random-access-memory')
+//const level = require('level-mem')
+const level = require('level')
 
 // Store logs in a directory called "log". Store views in memory.
 const core = kappa('./log', { valueEncoding: 'json' })
-const store = memdb()
+//const store = level()
+const store = level('db')
 
 core.use('events', list(store, (msg, next) => {
   const { createdAt } = msg.value
@@ -69,7 +71,7 @@ core.writer('local', (err, feed) => {
 
   setTimeout(() => {
     feed.append(nextEvent)
-  }, 2000)
+  }, 0)
 })
 
 core.api.events.onInsert((msg) => {
