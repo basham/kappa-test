@@ -5,13 +5,14 @@ const list = require('kappa-view-list')
 const ram = require('random-access-memory')
 //const level = require('level-mem')
 const level = require('level')
+const sub = require('subleveldown')
 
 // Store logs in a directory called "log". Store views in memory.
 const core = kappa('./log', { valueEncoding: 'json' })
 //const store = level()
-const store = level('db')
+const idx = level('db')
 
-core.use('events', list(store, (msg, next) => {
+core.use('events', list(idx, (msg, next) => {
   const { createdAt } = msg.value
   if (!createdAt) return next()
   next(null, [ createdAt ])
@@ -60,7 +61,7 @@ core.writer('local', (err, feed) => {
   const nextEvent = {
     id: cuid(),
     createdAt: (new Date()).toISOString(),
-    type: 'orgCreated1',
+    type: 'orgCreated',
     value: {
       id: cuid(),
       name: 'BloomingFools Hash House Harriers',
@@ -69,25 +70,67 @@ core.writer('local', (err, feed) => {
   }
   feed.append(nextEvent)
 
-  setTimeout(() => {
-    feed.append(nextEvent)
-  }, 0)
+  //setTimeout(() => {
+  //  feed.append(nextEvent)
+  //}, 0)
 })
 
-core.api.events.onInsert((msg) => {
-  console.log('early insert')
-})
+//core.api.events.onInsert((msg) => {
+  //console.log('early insert')
+//})
+
+const nodeDB = sub(idx, 'node', { valueEncoding: 'json' })
+const refDB = sub(idx, 'ref', { valueEncoding: 'json' })
+
+const eventProcessors = {
+  orgCreated: orgCreatedEvent
+}
 
 core.ready('events', () => {
-  core.api.events.read((err, msgs) => {
-    console.log('all events', msgs.length)
+  core.api.events.read(async (err, msgs) => {
+    await nodeDB.put('orgs', {})
+    for (const msg of msgs) {
+      //console.log('%%', msg.value)
+      await processEvent(nodeDB, msg.value)
+    }
+    console.log('>>', await refDB.get('orgs'))
+    //console.log('all events', msgs.length)
   })
 
   core.api.events.onInsert((msg) => {
-    console.log('insert', msg)
+    //console.log('insert', msg)
   })
 
   core.api.events.tail(2, (msgs) => {
     console.log('tail', msgs)
   })
 })
+
+async function processEvent (db, event) {
+  const { type } = event
+  const processor = eventProcessors[type]
+  if (processor) {
+    await processor(db, event)
+  }
+}
+
+async function orgCreatedEvent (db, event) {
+  const { value } = event
+  const { id } = value
+  await db.put(id, value)
+  //const v = await db.get(id)
+  const orgs = await getValue(refDB, 'orgs', {})
+  await refDB.put('orgs', { ...orgs, [id]: { '_ref': id } })
+  //db.get(id, (err, v) => console.log('**', v[4]))
+}
+
+async function getValue (db, key, defaultValue = undefined) {
+  try {
+    return await db.get(key)
+  } catch (err) {
+    if (err.notFound) {
+      return defaultValue
+    }
+    return err
+  }
+}
