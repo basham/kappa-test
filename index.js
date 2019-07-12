@@ -3,108 +3,95 @@ const kappa = require('kappa-core')
 const view = require('kappa-view')
 const list = require('kappa-view-list')
 const ram = require('random-access-memory')
-//const level = require('level-mem')
 const level = require('level')
 const sub = require('subleveldown')
 
-// Store logs in a directory called "log". Store views in memory.
 const core = kappa('./log', { valueEncoding: 'json' })
-//const store = level()
 const idx = level('db')
 
-core.use('events', list(idx, (msg, next) => {
-  const { createdAt } = msg.value
-  if (!createdAt) return next()
-  next(null, [ createdAt ])
-}))
-
-/*
-// View definition
-const sumview = view(store, (db) => {
-  //let sum
-  return {
-    // Called with a batch of log entries to be processed by the view.
-    // No further entries are processed by this view until 'next()' is called.
-    map: async (entries, next) => {
-      let sum
-      try {
-        sum = parseInt(await db.get('sum'))
-      } catch (err) {
-        if (err.notFound)
-          sum = 0
-        else
-          next(err)
-      }
-      entries
-        .filter(({ value }) => typeof value === 'number')
-        .forEach(({ value }) => {
-          sum += value
-        })
-      db.put('sum', sum, next)
-    },
-    // Whatever is defined in the "api" object is publicly accessible
-    api: {
-      get: (core, cb) => {
-        core.ready(() => { // wait for all views to catch up
-          db.get('sum', cb)
-        })
-      }
-    }
+const eventsView = {
+  ...list(idx, (msg, next) => {
+    const { createdTime } = msg.value
+    if (!createdTime) return next()
+    next(null, [ createdTime ])
+  }),
+  //storeState: (state, cb) => {
+    //console.log('STORE', deserializeState(state))
+    //idx.put('state', Buffer.from(state), cb)
+  //},
+  clearIndex: (cb) => {
+    //console.log('**** clear')
+    idx.del('state', cb)
   }
-})
+}
+core.use('events', 5, eventsView)
 
-// the api will be mounted at core.api.sum
-core.use('sum', 1, sumview) // name the view 'sum' and consider the 'sumview' logic as version 1
-*/
-
-core.writer('local', (err, feed) => {
-  const nextEvent = {
-    id: cuid(),
-    createdAt: (new Date()).toISOString(),
-    type: 'orgCreated',
-    value: {
-      id: cuid(),
-      name: 'BloomingFools Hash House Harriers',
-      nickname: 'BFH3'
-    }
-  }
-  feed.append(nextEvent)
-
-  //setTimeout(() => {
-  //  feed.append(nextEvent)
-  //}, 0)
-})
-
-//core.api.events.onInsert((msg) => {
-  //console.log('early insert')
-//})
-
-const nodeDB = sub(idx, 'node', { valueEncoding: 'json' })
-const refDB = sub(idx, 'ref', { valueEncoding: 'json' })
+const graphDB = sub(idx, 'graph', { valueEncoding: 'json' })
 
 const eventProcessors = {
   orgCreated: orgCreatedEvent
 }
 
+core.api.events.onInsert((value) => {
+  //console.log('PUT', value)
+})
+
 core.ready('events', () => {
+
+  // Store reference to all events that have been processed.
+  // Read from events view API.
+  // Skip all events that have been processed until reaching one
+  // that hasn't been processed.
+  // Process all future events and store event reference.
+  // Clear processed events when view clears (clearIndex).
+
+  idx.get('state', (e, v) => {
+    //console.log('Version', deserializeState(Buffer.from(v)).version)
+  })
+  /*
   core.api.events.read(async (err, msgs) => {
-    await nodeDB.put('orgs', {})
+    await graphDB.put('orgs', {})
     for (const msg of msgs) {
       //console.log('%%', msg.value)
-      await processEvent(nodeDB, msg.value)
+      await processEvent(graphDB, msg.value)
     }
-    console.log('>>', await refDB.get('orgs'))
+    //console.log('>>', await refDB.get('orgs'))
     //console.log('all events', msgs.length)
   })
 
-  core.api.events.onInsert((msg) => {
-    //console.log('insert', msg)
-  })
-
-  core.api.events.tail(2, (msgs) => {
+  core.api.events.tail(1, (msgs) => {
     console.log('tail', msgs)
   })
+  */
 })
+
+// https://github.com/kappa-db/multifeed-index/blob/master/lib/state.js
+function deserializeState (buf) {
+  var state = { keys: {} }
+  var len = buf.readUInt32LE(0)
+  for (var i = 0; i < len; i++) {
+    var pos = 4 + i * 40
+    var key = buf.slice(pos, pos + 32)
+    var min = buf.readUInt32LE(pos + 32)
+    var max = buf.readUInt32LE(pos + 36)
+    state.keys[key.toString('hex')] = {
+      key: key,
+      min: min,
+      max: max
+    }
+  }
+
+  // Read 'version', if there are any unread bytes left.
+  if (4 + len * 40 + 4 <= buf.length) {
+    var version = buf.readUInt32LE(4 + len * 40)
+    state.version = version
+    console.log('#', version, len, buf.length)
+  } else {
+    state.version = 1
+  }
+
+  return state
+}
 
 async function processEvent (db, event) {
   const { type } = event
@@ -112,6 +99,14 @@ async function processEvent (db, event) {
   if (processor) {
     await processor(db, event)
   }
+}
+
+async function putNode (db, value) {
+  return await db.put()
+}
+
+function createRef (_ref = cuid()) {
+  return { _ref }
 }
 
 async function orgCreatedEvent (db, event) {

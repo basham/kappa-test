@@ -10,6 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "cuid": "2.1.6",
+    "fs-extra": "8.1.0",
     "kappa-core": "4.0.0",
     "kappa-view": "3.0.0",
     "kappa-view-list": "1.1.2",
