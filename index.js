@@ -1,10 +1,11 @@
-const cuid = require('cuid')
-const kappa = require('kappa-core')
-const view = require('kappa-view')
-const list = require('kappa-view-list')
-const ram = require('random-access-memory')
-const level = require('level')
-const sub = require('subleveldown')
+import cuid from 'cuid'
+import kappa from 'kappa-core'
+import list from 'kappa-view-list'
+import level from 'level'
+import sub from 'subleveldown'
+import { moduleTest } from './util.js'
+
+console.log('####', moduleTest)
 
 const core = kappa('./log', { valueEncoding: 'json' })
 const idx = level('db')
@@ -15,16 +16,26 @@ const eventsView = {
     if (!createdTime) return next()
     next(null, [ createdTime ])
   }),
-  //storeState: (state, cb) => {
-    //console.log('STORE', deserializeState(state))
-    //idx.put('state', Buffer.from(state), cb)
-  //},
+  /*
+  fetchState: function (cb) {
+    idx.get('state', function (err, state) {
+      console.log('&& fetch', deserializeState(Buffer.from(state)).version)
+      if (err && err.notFound) cb()
+      else if (err) cb(err)
+      else cb(null, Buffer.from(state))
+    })
+  },
+  storeState: (state, cb) => {
+    console.log('STORE', deserializeState(state).version)
+    idx.put('state', Buffer.from(state), cb)
+  },
   clearIndex: (cb) => {
-    //console.log('**** clear')
-    idx.del('state', cb)
+    console.log('**** clear')
+    //idx.del('state', cb)
   }
+  */
 }
-core.use('events', 5, eventsView)
+core.use('events', 4, eventsView)
 
 const graphDB = sub(idx, 'graph', { valueEncoding: 'json' })
 
@@ -36,7 +47,7 @@ core.api.events.onInsert((value) => {
   //console.log('PUT', value)
 })
 
-core.ready('events', () => {
+core.ready('events', async () => {
 
   // Store reference to all events that have been processed.
   // Read from events view API.
@@ -45,9 +56,12 @@ core.ready('events', () => {
   // Process all future events and store event reference.
   // Clear processed events when view clears (clearIndex).
 
-  idx.get('state', (e, v) => {
+  const eventLog = await readEvents()
+  console.log('%%', eventLog)
+
+  //idx.get('state', (e, v) => {
     //console.log('Version', deserializeState(Buffer.from(v)).version)
-  })
+  //})
   /*
   core.api.events.read(async (err, msgs) => {
     await graphDB.put('orgs', {})
@@ -65,32 +79,16 @@ core.ready('events', () => {
   */
 })
 
-// https://github.com/kappa-db/multifeed-index/blob/master/lib/state.js
-function deserializeState (buf) {
-  var state = { keys: {} }
-  var len = buf.readUInt32LE(0)
-  for (var i = 0; i < len; i++) {
-    var pos = 4 + i * 40
-    var key = buf.slice(pos, pos + 32)
-    var min = buf.readUInt32LE(pos + 32)
-    var max = buf.readUInt32LE(pos + 36)
-    state.keys[key.toString('hex')] = {
-      key: key,
-      min: min,
-      max: max
-    }
-  }
-
-  // Read 'version', if there are any unread bytes left.
-  if (4 + len * 40 + 4 <= buf.length) {
-    var version = buf.readUInt32LE(4 + len * 40)
-    state.version = version
-    console.log('#', version, len, buf.length)
-  } else {
-    state.version = 1
-  }
-
-  return state
+function readEvents (options = {}) {
+  return new Promise((resolve, reject) => {
+    core.api.events.read(options, (err, msgs) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(msgs)
+      }
+    })
+  })
 }
 
 async function processEvent (db, event) {
