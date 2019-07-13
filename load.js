@@ -1,14 +1,19 @@
-const cuid = require('cuid')
-const fs = require('fs-extra')
-const kappa = require('kappa-core')
+import cuid from 'cuid'
+import fs from 'fs-extra'
+import kappa from 'kappa-core'
 
-const ids = [ ...Array(2) ].map(() => cuid())
+let d = new Date()
+
+const ids = [ ...Array(2) ]
+  .map(() => cuid())
+const dates = [ ...Array(2) ]
+  .map(() => dateTick().toISOString())
 
 const events = [
   {
     id: cuid(),
-    createdTime: (new Date()).toISOString(),
-    updatedTime: (new Date()).toISOString(),
+    createdTime: dates[0],
+    updatedTime: dates[0],
     type: 'GroupCreated',
     value: {
       id: ids[0],
@@ -20,8 +25,8 @@ const events = [
   },
   {
     id: cuid(),
-    createdTime: (new Date()).toISOString(),
-    updatedTime: (new Date()).toISOString(),
+    createdTime: dates[1],
+    updatedTime: dates[1],
     type: 'MemberCreated',
     value: {
       id: cuid(),
@@ -35,7 +40,7 @@ const events = [
 
 const logPath = './log'
 
-//fs.removeSync(logPath)
+fs.removeSync(logPath)
 
 const core = kappa(logPath, { valueEncoding: 'json' })
 core.writer('local', async (err, feed) => {
@@ -54,4 +59,9 @@ function append (feed, data) {
       }
     })
   })
+}
+
+function dateTick (ms = 1000) {
+  d = new Date(d.getTime() + ms)
+  return d
 }
