@@ -2,4 +2,5 @@ package-lock.json
 db
 log
 node_modules
+bundle.js
 .DS_STORE
