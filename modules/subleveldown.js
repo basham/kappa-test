@@ -1,1 +1,1 @@
-export default window.subleveldown
+export default window.DEPS.subleveldown

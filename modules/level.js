@@ -1,1 +1,1 @@
-export { level as default } from '../bundle.js'
+export default window.DEPS.level

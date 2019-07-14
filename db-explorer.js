@@ -3,20 +3,22 @@ const { ReplaySubject, combineLatest, isObservable, of } = rxjs
 const { map, tap } = rxjs.operators
 const { whenAdded } = WhenElements
 
-//import level from './modules/level.js'
+import level from './modules/level.js'
 //import level from './out/level.js'
-//import sub from './modules/subleveldown.js'
+import sub from './modules/subleveldown.js'
 //import { get } from './util.js'
+import cuid from './modules/cuid.js'
+import { get } from './modules/util.js'
 
-//const idx = level('db')
-//const db = sub(idx, 'graph', { valueEncoding: 'json' })
+const idx = level('db')
+const db = sub(idx, 'graph', { valueEncoding: 'json' })
 
 //import { test } from './bundle.js'
 //console.log('!!', test)
 
 //import cuid from './bundle.js'
-import cuid from './modules/cuid.js'
-console.log('??', cuid)
+
+console.log('??', cuid())
 
 /*
 Gun.chain.$ = function rxjs () {
@@ -26,9 +28,12 @@ Gun.chain.$ = function rxjs () {
 }
 */
 
-(async () => {
-  console.log('WOO', await get(db, 'root'))
-})()
+async function start () {
+  //const root = await get(db, 'root')
+  const root = await db.get('root')
+  console.log('WOO', root)
+}
+start()
 
 const combineProps = (source) => {
   const streams = Object.keys(source)
