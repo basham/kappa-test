@@ -7,9 +7,8 @@
   "scripts": {
     "start": "node --experimental-modules index.js",
     "load": "node --experimental-modules load.js",
-    "dev": "http-server -a localhost -o -c-1",
-    "build": "browserify vendor.js -p esmify -o bundle.js",
-    "pika": "pika-web"
+    "build": "webpack --mode=development test.js -o bundles/test.js",
+    "dev": "webpack-dev-server --entry ./test.js --output-path ./bundles --output-filename test.js --open-page ./db.html"
   },
   "author": "Chris Basham <chris@bash.am>",
   "license": "MIT",
@@ -24,9 +23,9 @@
     "subleveldown": "4.1.0"
   },
   "devDependencies": {
-    "browserify": "16.3.0",
-    "esmify": "2.1.1",
-    "http-server": "0.11.1"
+    "webpack": "4.35.3",
+    "webpack-cli": "3.3.6",
+    "webpack-dev-server": "3.7.2"
   },
   "engines": {
     "node": ">=12"

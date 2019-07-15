@@ -3,12 +3,17 @@ const { ReplaySubject, combineLatest, isObservable, of } = rxjs
 const { map, tap } = rxjs.operators
 const { whenAdded } = WhenElements
 
-import level from './modules/level.js'
+//import level from './modules/level.js'
 //import level from './out/level.js'
-import sub from './modules/subleveldown.js'
+//import sub from './modules/subleveldown.js'
 //import { get } from './util.js'
-import cuid from './modules/cuid.js'
-import { get } from './modules/util.js'
+//import cuid from './modules/cuid.js'
+//import { get } from './modules/util.js'
+
+import cuid from 'cuid'
+import level from 'level'
+import sub from 'subleveldown'
+import { get } from './util.js'
 
 const idx = level('db')
 const db = sub(idx, 'graph', { valueEncoding: 'json' })
