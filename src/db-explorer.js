@@ -1,19 +1,16 @@
-const { html, render } = lighterhtml
-const { ReplaySubject, combineLatest, isObservable, of } = rxjs
-const { map, tap } = rxjs.operators
-const { whenAdded } = WhenElements
-
-//import level from './modules/level.js'
-//import level from './out/level.js'
-//import sub from './modules/subleveldown.js'
-//import { get } from './util.js'
-//import cuid from './modules/cuid.js'
-//import { get } from './modules/util.js'
+import 'cuid/dist/cuid.min.js?external'
+import 'lighterhtml/min.js?external'
+import 'rxjs/bundles/rxjs.umd.min.js?external'
+import 'when-elements?external'
 
 import cuid from 'cuid'
 import level from 'level'
+import { html, render } from 'lighterhtml'
+import { ReplaySubject, combineLatest, isObservable, of } from 'rxjs'
+import { map, tap } from 'rxjs/operators'
 import sub from 'subleveldown'
-import { get } from './util.js'
+import { whenAdded } from 'when-elements'
+import { get } from '../util.js'
 
 const idx = level('db')
 const db = sub(idx, 'graph', { valueEncoding: 'json' })

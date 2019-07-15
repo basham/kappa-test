@@ -1,6 +1,7 @@
-package-lock.json
 db
+dist
 log
 node_modules
-bundles
+
 .DS_STORE
+package-lock.json
