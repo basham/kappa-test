@@ -2,6 +2,7 @@ db
 dist
 log
 node_modules
+tmp
 
 .DS_STORE
 package-lock.json

@@ -3,74 +3,85 @@ import 'lighterhtml/min.js?external'
 import 'rxjs/bundles/rxjs.umd.min.js?external'
 import 'when-elements?external'
 
-import cuid from 'cuid'
+import kappa from 'kappa-core'
+import list from 'kappa-view-list'
 import level from 'level'
-import { html, render } from 'lighterhtml'
-import { ReplaySubject, combineLatest, isObservable, of } from 'rxjs'
-import { map, tap } from 'rxjs/operators'
+import { html } from 'lighterhtml'
+import RAW from 'random-access-web'
+import { of } from 'rxjs'
+import { map } from 'rxjs/operators'
 import sub from 'subleveldown'
 import { whenAdded } from 'when-elements'
-import { get } from '../util.js'
+import { processEvent } from './events.js'
+import { combineLatestProps, pluralize, renderComponent } from './util.js'
+import eventLog from '../tmp/event-log.json'
+
+const storage = RAW('events')
+const core = kappa(storage, { valueEncoding: 'json' })
+
+core.writer('local', async (err, feed) => {
+  for (const event of eventLog) {
+    await append(feed, event)
+  }
+})
+
+function append (feed, data) {
+  return new Promise((resolve, reject) => {
+    feed.append(data, (err, seq) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(seq)
+      }
+    })
+  })
+}
 
 const idx = level('db')
-const db = sub(idx, 'graph', { valueEncoding: 'json' })
 
-//import { test } from './bundle.js'
-//console.log('!!', test)
+core.use('events', 1, list(idx, (msg, next) => {
+  const { value } = msg 
+  const { createdTime } = value
+  if (!createdTime) return next()
+  next(null, [ createdTime ])
+}))
 
-//import cuid from './bundle.js'
+const graphDB = sub(idx, 'graph', { valueEncoding: 'json' })
 
-console.log('??', cuid())
+core.ready('events', async () => {
 
-/*
-Gun.chain.$ = function rxjs () {
-  const stream = new ReplaySubject(1)
-  this.on((value) => stream.next(value))
-  return stream
+  // Store reference to all events that have been processed.
+  // Read from events view API.
+  // Skip all events that have been processed until reaching one
+  // that hasn't been processed.
+  // Process all future events and store event reference.
+  // Clear processed events when view clears (clearIndex).
+
+  const eventLog = await readEvents()
+  console.log('MSG', eventLog)
+  for (const msg of eventLog) {
+    await processEvent(graphDB, msg.value)
+  }
+})
+
+function readEvents (options = {}) {
+  return new Promise((resolve, reject) => {
+    core.api.events.read(options, (err, msgs) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(msgs)
+      }
+    })
+  })
 }
-*/
-
-async function start () {
-  //const root = await get(db, 'root')
-  const root = await db.get('root')
-  console.log('WOO', root)
-}
-start()
-
-const combineProps = (source) => {
-  const streams = Object.keys(source)
-    .filter((key) => isObservable(source[key]))
-    .map((key) =>
-      source[key].pipe(
-        map((value) => ({ [key]: value }))
-      )
-    )
-  const data = Object.keys(source)
-    .filter((key) => !isObservable(source[key]))
-    .map((key) => ({ [key]: source[key] }))
-    .reduce((prev, curr) => ({ ...prev, ...curr }), {})
-  return combineLatest(streams).pipe(
-    map((props) =>
-      props
-        .reduce((prev, curr) => ({ ...prev, ...curr }), data)
-    )
-  )
-}
-
-function pluralize (value, str) {
-  return `${str}${value === 1 ? '' : 's'}`
-}
-
-const renderComponent = (element, renderer) => (source$) => source$.pipe(
-  tap((props) => render(element, () => renderer(props)))
-)
 
 whenAdded('#app', (el) => {
   const org$ = of({ name: 'Test', members: [1, 2] })
   const memberCount$ = org$.pipe(
     map(({ members }) => Object.keys(members).length)
   )
-  const sub = combineProps({
+  const sub = combineLatestProps({
     org: org$,
     memberCount: memberCount$,
     foo: 'bar'

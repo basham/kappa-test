@@ -1,6 +1,5 @@
 import cuid from 'cuid'
-import fs from 'fs-extra'
-import kappa from 'kappa-core'
+import fs from 'fs'
 
 let d = new Date()
 
@@ -38,28 +37,15 @@ const events = [
   }
 ]
 
-const logPath = './log'
+const dir = './tmp'
+const file = 'event-log.json'
 
-fs.removeSync(logPath)
-
-const core = kappa(logPath, { valueEncoding: 'json' })
-core.writer('local', async (err, feed) => {
-  for (const event of events) {
-    await append(feed, event)
-  }
-})
-
-function append (feed, data) {
-  return new Promise((resolve, reject) => {
-    feed.append(data, (err, seq) => {
-      if (err) {
-        reject(err)
-      } else {
-        resolve(seq)
-      }
-    })
-  })
+if (!fs.existsSync(dir)) {
+  fs.mkdirSync(dir)
 }
+
+const data = JSON.stringify(events, null, 2)
+fs.writeFileSync(`${dir}/${file}`, data)
 
 function dateTick (ms = 1000) {
   d = new Date(d.getTime() + ms)

@@ -13,8 +13,11 @@ const commonConfig = {
   devtool: 'source-map',
   externals: {
     'cuid': 'cuid',
+    'kappa-core': 'KappaCore',
+    'kappa-view-list': 'KappaViewList',
     'level': 'level',
     'lighterhtml': 'lighterhtml',
+    'random-access-web': 'RandomAccessWeb',
     'rxjs': 'rxjs',
     'rxjs/ajax': 'rxjs.ajax',
     'rxjs/operators': 'rxjs.operators',
