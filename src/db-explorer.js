@@ -13,6 +13,7 @@ import { map } from 'rxjs/operators'
 import sub from 'subleveldown'
 import { whenAdded } from 'when-elements'
 import { processEvent } from './events.js'
+import { createRef, get, put } from './util.js'
 import { combineLatestProps, pluralize, renderComponent } from './util.js'
 import eventLog from '../tmp/event-log.json'
 
@@ -46,6 +47,7 @@ core.use('events', 1, list(idx, (msg, next) => {
   next(null, [ createdTime ])
 }))
 
+const metaDB = sub(idx, 'meta', { valueEncoding: 'json' })
 const graphDB = sub(idx, 'graph', { valueEncoding: 'json' })
 
 core.ready('events', async () => {
@@ -57,11 +59,19 @@ core.ready('events', async () => {
   // Process all future events and store event reference.
   // Clear processed events when view clears (clearIndex).
 
+  const loaded = await get(metaDB, 'loaded', false)
+
+  if (loaded) {
+    return
+  }
+
   const eventLog = await readEvents()
   console.log('MSG', eventLog)
   for (const msg of eventLog) {
     await processEvent(graphDB, msg.value)
   }
+
+  await put(metaDB, 'loaded', true)
 })
 
 function readEvents (options = {}) {
@@ -75,6 +85,17 @@ function readEvents (options = {}) {
     })
   })
 }
+
+graphDB.on('ready', async () => {
+  const db = graphDB
+  try {
+    const rootRef = await get(db, 'root', () => createRef())
+    const root = await get(db, rootRef, {})
+    console.log('ROOT', root)
+  } catch (err) {
+    console.error(err)
+  }
+})
 
 whenAdded('#app', (el) => {
   const org$ = of({ name: 'Test', members: [1, 2] })
