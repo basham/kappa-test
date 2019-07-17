@@ -8,12 +8,12 @@ import list from 'kappa-view-list'
 import level from 'level'
 import { html } from 'lighterhtml'
 import RAW from 'random-access-web'
-import { of } from 'rxjs'
+import { from } from 'rxjs'
 import { map } from 'rxjs/operators'
 import sub from 'subleveldown'
 import { whenAdded } from 'when-elements'
 import { processEvent } from './events.js'
-import { createRef, get, put } from './util.js'
+import { createRef, get, isRef, put } from './util.js'
 import { combineLatestProps, pluralize, renderComponent } from './util.js'
 import eventLog from '../tmp/event-log.json'
 
@@ -86,6 +86,7 @@ function readEvents (options = {}) {
   })
 }
 
+/*
 graphDB.on('ready', async () => {
   const db = graphDB
   try {
@@ -96,27 +97,73 @@ graphDB.on('ready', async () => {
     console.error(err)
   }
 })
+*/
 
 whenAdded('#app', (el) => {
-  const org$ = of({ name: 'Test', members: [1, 2] })
-  const memberCount$ = org$.pipe(
-    map(({ members }) => Object.keys(members).length)
-  )
+  const params = new URLSearchParams(window.location.search)
+  const refKey = params.get('ref') ? params.get('ref') : 'root'
+  const getRefValue = async () => {
+    return await get(graphDB, refKey)
+  }
+  const refValue$ = from(getRefValue())
+
   const sub = combineLatestProps({
-    org: org$,
-    memberCount: memberCount$,
-    foo: 'bar'
+    key: refKey,
+    value: refValue$,
   }).pipe(
     renderComponent(el, render)
   ).subscribe()
   return () => sub.unsubscribe()
   function render (props) {
-    const { memberCount, org } = props
-    console.log('&&', props)
-    const { name } = org
+    const { key, value } = props
     return html`
-      <h1>${name}</h1>
-      <p>${memberCount} ${pluralize(memberCount, 'member')}</p>
+      <h1>Database</h1>
+      <p><a href="?">Root</a></p>
+      <table>
+        <thead>
+          <th>Key</th>
+          <th>Value</th>
+        </thead>
+        <tbody>
+          ${renderRef(value)}
+        </tbody>
+      </table>
+    `
+  }
+
+  function renderRef (props) {
+    if (isRef(props)) {
+      const { _ref } = props
+      return html`
+        <tr>
+          ${renderValue(_ref, props)}
+        </tr>
+      `
+    }
+    return Object.keys(props).map((k) => {
+      const v = props[k]
+      return html`
+        <tr>
+          ${renderValue(k, v)}
+        </tr>
+      `
+    })
+  }
+
+  function renderValue (key, value) {
+    if (isRef(value)) {
+      return html`
+        <td>
+          <a href=${`?ref=${value._ref}`}>
+            ${key}
+          </a>
+        </td>
+        <td><em>(ref)</em></td>
+      `
+    }
+    return html`
+      <td>${key}</td>
+      <td>${value}</td>
     `
   }
 })
