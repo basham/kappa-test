@@ -9,12 +9,11 @@ import level from 'level'
 import { html } from 'lighterhtml'
 import RAW from 'random-access-web'
 import { from } from 'rxjs'
-import { map } from 'rxjs/operators'
 import sub from 'subleveldown'
 import { whenAdded } from 'when-elements'
 import { processEvent } from './events.js'
-import { createRef, get, isRef, put } from './util.js'
-import { combineLatestProps, pluralize, renderComponent } from './util.js'
+import { get, isRef, put } from './util.js'
+import { combineLatestProps, renderComponent } from './util.js'
 import eventLog from '../tmp/event-log.json'
 
 const storage = RAW('events')
@@ -85,19 +84,6 @@ function readEvents (options = {}) {
     })
   })
 }
-
-/*
-graphDB.on('ready', async () => {
-  const db = graphDB
-  try {
-    const rootRef = await get(db, 'root', () => createRef())
-    const root = await get(db, rootRef, {})
-    console.log('ROOT', root)
-  } catch (err) {
-    console.error(err)
-  }
-})
-*/
 
 whenAdded('#app', (el) => {
   const params = new URLSearchParams(window.location.search)
