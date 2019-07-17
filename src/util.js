@@ -4,6 +4,38 @@ import { combineLatest, isObservable } from 'rxjs'
 import { map, tap } from 'rxjs/operators'
 
 //
+// Hypercore
+//
+
+export function append (feed, data) {
+  return new Promise((resolve, reject) => {
+    feed.append(data, (err, seq) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(seq)
+      }
+    })
+  })
+}
+
+//
+// Kappa
+//
+
+export function readListView (view, options = {}) {
+  return new Promise((resolve, reject) => {
+    view.read(options, (err, msgs) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(msgs)
+      }
+    })
+  })
+}
+
+//
 // Database
 //
 
@@ -85,7 +117,7 @@ export const renderComponent = (element, renderer) => (source$) => source$.pipe(
 )
 
 //
-// General
+// Other
 //
 
 export function pipe (source, ...fns) {

@@ -12,7 +12,7 @@ import { from } from 'rxjs'
 import sub from 'subleveldown'
 import { whenAdded } from 'when-elements'
 import { processEvent } from './events.js'
-import { get, isRef, put } from './util.js'
+import { append, get, isRef, put, readListView } from './util.js'
 import { combineLatestProps, renderComponent } from './util.js'
 import eventLog from '../tmp/event-log.json'
 
@@ -24,18 +24,6 @@ core.writer('local', async (err, feed) => {
     await append(feed, event)
   }
 })
-
-function append (feed, data) {
-  return new Promise((resolve, reject) => {
-    feed.append(data, (err, seq) => {
-      if (err) {
-        reject(err)
-      } else {
-        resolve(seq)
-      }
-    })
-  })
-}
 
 const idx = level('db')
 
@@ -64,7 +52,7 @@ core.ready('events', async () => {
     return
   }
 
-  const eventLog = await readEvents()
+  const eventLog = await readListView(core.api.events)
   console.log('MSG', eventLog)
   for (const msg of eventLog) {
     await processEvent(graphDB, msg.value)
@@ -72,18 +60,6 @@ core.ready('events', async () => {
 
   await put(metaDB, 'loaded', true)
 })
-
-function readEvents (options = {}) {
-  return new Promise((resolve, reject) => {
-    core.api.events.read(options, (err, msgs) => {
-      if (err) {
-        reject(err)
-      } else {
-        resolve(msgs)
-      }
-    })
-  })
-}
 
 whenAdded('#app', (el) => {
   const params = new URLSearchParams(window.location.search)
