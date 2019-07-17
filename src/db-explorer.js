@@ -101,10 +101,9 @@ graphDB.on('ready', async () => {
 
 whenAdded('#app', (el) => {
   const params = new URLSearchParams(window.location.search)
-  const refKey = params.get('ref') ? params.get('ref') : 'root'
-  const getRefValue = async () => {
-    return await get(graphDB, refKey)
-  }
+  const rootRef = 'root'
+  const refKey = params.get('ref') ? params.get('ref') : rootRef
+  const getRefValue = async () => (await get(graphDB, refKey))
   const refValue$ = from(getRefValue())
 
   const sub = combineLatestProps({
@@ -113,12 +112,17 @@ whenAdded('#app', (el) => {
   }).pipe(
     renderComponent(el, render)
   ).subscribe()
+
   return () => sub.unsubscribe()
+
   function render (props) {
     const { key, value } = props
     return html`
       <h1>Database</h1>
-      <p><a href="?">Root</a></p>
+      <p>
+        ${key === rootRef ? null : html`<a href="?">${rootRef}</a> / `}
+        ${key}
+      </p>
       <table>
         <thead>
           <th>Key</th>
