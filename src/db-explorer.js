@@ -28,10 +28,10 @@ core.writer('local', async (err, feed) => {
 const idx = level('db')
 
 core.use('events', 1, list(idx, (msg, next) => {
-  const { value } = msg 
-  const { createdTime } = value
-  if (!createdTime) return next()
-  next(null, [ createdTime ])
+  const { value } = msg
+  const { eventId } = value
+  if (!eventId) return next()
+  next(null, [ eventId ])
 }))
 
 const metaDB = sub(idx, 'meta', { valueEncoding: 'json' })
@@ -66,6 +66,7 @@ whenAdded('#app', (el) => {
   const rootRef = 'root'
   const refKey = params.get('ref') ? params.get('ref') : rootRef
   const getRefValue = async () => (await get(graphDB, refKey))
+  // Wait for the database to finish loading to prevent the initial error.
   const refValue$ = from(getRefValue())
 
   const sub = combineLatestProps({

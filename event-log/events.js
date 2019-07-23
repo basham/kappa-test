@@ -9,15 +9,14 @@ export function createEvent (type, data) {
   }
 }
 
-export function createRoot (rootLink = 'root') {
+export function createRoot () {
   return createEvent('RootCreated', () => ({
     rootId: cuid(),
-    rootLink,
-    groups: cuid(),
-    people: cuid(),
-    memberships: cuid(),
-    events: cuid(),
-    attendances: cuid()
+    groupsId: cuid(),
+    peopleId: cuid(),
+    membershipsId: cuid(),
+    eventsId: cuid(),
+    attendancesId: cuid()
   }))
 }
 
