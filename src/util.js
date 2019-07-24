@@ -55,8 +55,12 @@ export function isRef (value) {
   return value !== null && typeof value === 'object' && typeof value._ref === 'string'
 }
 
+export function getRefId (keyOrRef) {
+  return isRef(keyOrRef) ? keyOrRef._ref : keyOrRef
+}
+
 export async function get (db, keyOrRef, defaultValue = undefined) {
-  const key = isRef(keyOrRef) ? keyOrRef._ref : keyOrRef
+  const key = getRefId(keyOrRef)
   try {
     return await db.get(key)
   } catch (err) {
@@ -74,14 +78,15 @@ export async function get (db, keyOrRef, defaultValue = undefined) {
 }
 
 export async function put (db, keyOrRef, value) {
-  const key = isRef(keyOrRef) ? keyOrRef._ref : keyOrRef
+  const key = getRefId(keyOrRef)
   await db.put(key, value)
 }
 
 export async function set (db, keyOrRef, ref) {
-  const key = isRef(keyOrRef) ? keyOrRef._ref : keyOrRef
+  const key = getRefId(keyOrRef)
+  const id = getRefId(ref)
   const obj = await get(db, keyOrRef, {})
-  await put(db, key, { ...obj, [ref._ref]: ref })
+  await put(db, key, { ...obj, [id]: ref })
 }
 
 //
