@@ -3,6 +3,7 @@ dist
 log
 node_modules
 tmp
+web_modules
 
 .DS_STORE
 package-lock.json

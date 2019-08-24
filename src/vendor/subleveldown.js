@@ -1,1 +1,0 @@
-window.subleveldown = require('subleveldown')

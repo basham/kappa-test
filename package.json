@@ -5,34 +5,54 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "build": "npm run build:src && npm run build:vendor",
-    "build:src": "webpack --mode=production",
-    "build:vendor": "webpack --mode=production --config ./webpack.vendor.config.js",
+    "dep": "npm run dep:pika && npm run dep:cjs",
+    "dep:cjs": "node --experimental-modules scripts/cjs.js",
+    "dep:pika": "pika-web --clean --optimize --no-source-map",
     "event-log:generate": "node --experimental-modules event-log/generate.js",
     "event-log:load": "node --experimental-modules event-log/load.js",
-    "start": "webpack-dev-server --mode=development --open-page ./db.html"
+    "postinstall": "npm run dep",
+    "start": "es-dev-server --open ./client/test.html --watch ./src"
   },
   "author": "Chris Basham <chris@bash.am>",
   "license": "MIT",
   "dependencies": {
     "cuid": "2.1.6",
+    "es-module-shims": "0.2.15",
+    "events": "3.0.0",
     "fs-extra": "8.1.0",
     "kappa-core": "4.0.0",
     "kappa-view-list": "1.1.2",
     "level": "5.0.1",
     "lighterhtml": "0.14.8",
+    "path": "0.12.7",
     "random-access-web": "2.0.3",
     "rxjs": "6.5.2",
     "subleveldown": "4.1.0",
     "when-elements": "0.2.1"
   },
   "devDependencies": {
-    "file-loader": "4.0.0",
+    "@pika/web": "0.5.3",
+    "es-dev-server": "1.14.2",
     "webpack": "4.35.3",
-    "webpack-cli": "3.3.6",
-    "webpack-dev-server": "3.7.2",
-    "webpack-merge": "4.2.1"
+    "webpack-cli": "3.3.6"
   },
+  "@pika/web": {
+    "webDependencies": [
+      "cuid",
+      "es-module-shims",
+      "kappa-core",
+      "kappa-view-list",
+      "lighterhtml",
+      "random-access-web",
+      "rxjs",
+      "rxjs/operators",
+      "when-elements"
+    ]
+  },
+  "cjsDependencies": [
+    "level",
+    "subleveldown"
+  ],
   "engines": {
     "node": ">=12"
   }

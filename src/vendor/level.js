@@ -1,1 +1,0 @@
-window.level = require('level')
