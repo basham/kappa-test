@@ -46,7 +46,7 @@ async function cjs (moduleName) {
 function bundle (name, file) {
   return new Promise((res, rej) => {
     browserify(file)
-      .plugin('tinyify')
+      //.plugin('tinyify')
       .bundle((err, buf) => {
         if (err) {
           rej(err)
