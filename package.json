@@ -23,18 +23,18 @@
     "kappa-core": "4.0.0",
     "kappa-view-list": "1.1.2",
     "level": "5.0.1",
-    "lighterhtml": "0.14.8",
+    "lighterhtml": "1.0.2",
     "path": "0.12.7",
     "random-access-web": "2.0.3",
     "rxjs": "6.5.2",
-    "subleveldown": "4.1.0",
+    "subleveldown": "4.1.1",
     "when-elements": "0.2.1"
   },
   "devDependencies": {
     "@pika/web": "0.5.3",
     "es-dev-server": "1.14.2",
-    "webpack": "4.35.3",
-    "webpack-cli": "3.3.6"
+    "webpack": "4.39.2",
+    "webpack-cli": "3.3.7"
   },
   "@pika/web": {
     "webDependencies": [
