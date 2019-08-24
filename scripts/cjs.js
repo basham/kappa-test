@@ -15,7 +15,7 @@ const entry = pkg.cjsDependencies
 Object.entries(entry)
   .forEach(([ moduleName, fileName ]) => {
     const filePath = resolve(__root, __tmp, fileName)
-    const fileContents = `window.${moduleName} = require('${moduleName}')`
+    const fileContents = `window['${moduleName}'] = require('${moduleName}')`
     writeFileSync(filePath, fileContents)
   })
 
@@ -39,7 +39,7 @@ compiler.run((err, stats) => {
       unlinkSync(resolve(__root, __tmp, fileName))
 
       const filePath = resolve(__root, __web_modules, fileName)
-      const contents = `export default window.${moduleName};`
+      const contents = `export default window['${moduleName}'];`
       appendFileSync(filePath, contents)
 
       const mapPath = resolve(__root, __web_modules, 'import-map.json')

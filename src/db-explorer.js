@@ -1,8 +1,3 @@
-import 'cuid/dist/cuid.min.js?external'
-import 'lighterhtml/min.js?external'
-import 'rxjs/bundles/rxjs.umd.min.js?external'
-import 'when-elements?external'
-
 import kappa from 'kappa-core'
 import list from 'kappa-view-list'
 import level from 'level'
@@ -99,6 +94,9 @@ whenAdded('#app', (el) => {
   }
 
   function renderRef (props) {
+    if (!props) {
+      return null
+    }
     if (isRef(props)) {
       const { _ref } = props
       return html`
