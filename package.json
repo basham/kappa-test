@@ -17,6 +17,7 @@
   "license": "MIT",
   "dependencies": {
     "cuid": "2.1.6",
+    "dat-sdk": "0.2.2",
     "es-module-shims": "0.2.15",
     "fs-extra": "8.1.0",
     "kappa-core": "4.0.0",
@@ -30,9 +31,9 @@
   },
   "devDependencies": {
     "@pika/web": "0.5.3",
+    "browserify": "16.5.0",
     "es-dev-server": "1.14.2",
-    "webpack": "4.39.2",
-    "webpack-cli": "3.3.7"
+    "tinyify": "2.5.1"
   },
   "@pika/web": {
     "webDependencies": [
@@ -45,6 +46,7 @@
     ]
   },
   "cjsDependencies": [
+    "dat-sdk",
     "kappa-core",
     "kappa-view-list",
     "level",
