@@ -1,36 +1,57 @@
 import cuid from 'cuid'
-import sdk from 'dat-sdk'
+import kappa from 'kappa-core'
+import list from 'kappa-view-list'
+import level from 'level'
 import { html } from 'lighterhtml'
+//import RA from 'random-access-idb'
+import RAW from 'random-access-web'
 import { BehaviorSubject } from 'rxjs'
 import { whenAdded } from 'when-elements'
-import { combineLatestProps, renderComponent } from './util.js'
+import { append, combineLatestProps, readListView, renderComponent } from './util.js'
 
-const { Hypercore } = sdk()
+const storage = RAW('app-events')
 
-const core = Hypercore(null, {
-  valueEncoding: 'json',
-  persist: false
-})
+const core = kappa(storage, { valueEncoding: 'json' })
 
-function postMessage (text) {
-  core.append(JSON.stringify({
-    id: cuid(),
+const idx = level('app-db')
+
+core.use('events', 1, list(idx, (msg, next) => {
+  const { value } = msg
+  const { eventId } = value
+  if (!eventId) return next()
+  next(null, [ eventId ])
+}))
+
+async function postMessage (text) {
+  const event = {
+    eventId: cuid(),
+    type: 'message',
     text,
     createdTime: new Date().toJSON()
-  }))
+  }
+  core.writer('local', async (err, feed) => {
+    await append(feed, event)
+  })
 }
 
 whenAdded('#app', (el) => {
   const messages$ = new BehaviorSubject([])
-  const nextMessage = (value) => {
-    messages$.next([ ...messages$.getValue(), value ])
-  }
 
-  core.on('append', () => {
-    core.head((err, data) => {
-      const value = JSON.parse(data)
-      nextMessage(value)
-      console.log('Appended:', value)
+  core.ready('events', async () => {
+    const list = await readListView(core.api.events)
+    console.log('LIST', list)
+    const messages = list
+      .map(({ value }) => value)
+      .filter(({ type }) => type === 'message')
+    messages$.next(messages)
+
+    core.api.events.onInsert((data) => {
+      console.log('INSERT', data)
+      const { value } = data
+      const { type } = value
+      if (type === 'message') {
+        messages$.next([ ...messages$.getValue(), value ])
+      }
     })
   })
 
